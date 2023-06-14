@@ -24,9 +24,15 @@ public class Server {
         mss = new MeuServerSocket();
 
         System.out.println("Antes de conectar com o cliente");
-
-        mss.startConnection(8082);
-
+        
+        
+        System.out.println("socket: "+mss);
+        
+        
+        mss.startConnection(80);
+        
+        System.out.println("Conexão criada");
+        
         menor = Integer.MAX_VALUE;
         melhor = new ArrayList<Integer>();
 
@@ -37,13 +43,13 @@ public class Server {
             melhor = new ArrayList<Integer>();
 
             Graph graph = (AdjMatrix) mss.recebeObj();
-            System.out.println("Graph: " + graph);
+//            System.out.println("Graph: " + graph);
 
             ArrayList<Integer> caminho = (ArrayList<Integer>) mss.recebeObj();
-            System.out.println("Arraylist: " + caminho);
+//            System.out.println("Arraylist: " + caminho);
 
             double custo = (Double) mss.recebeObj();
-            System.out.println("Double: " + custo);
+//            System.out.println("Double: " + custo);
 
             boolean visitado[] = new boolean[graph.getVertexNum()];
 
@@ -53,11 +59,13 @@ public class Server {
 
             busca(graph, caminho, custo, visitado);
 
-            System.out.println("Enviando melhor: " + melhor);
+            System.out.println("\n---Enviando resultado---\n");
+            
+//            System.out.println("Enviando melhor: " + melhor);
             mss.enviaObj(melhor);
 
-            System.out.println("Enviando: " + custo);
-            mss.enviaObj(custo);
+//            System.out.println("Enviando: " + custo+"\n\n");
+            mss.enviaObj(menor);
 
         }
 
@@ -65,6 +73,9 @@ public class Server {
 
     public static void busca(Graph g, ArrayList<Integer> caminho, double custo, boolean v[]) {
 
+        System.out.println("\n ---Entrou na chamada---\n");
+//        System.out.println("Parcial: "+ caminho+"\n peso: "+custo+"\n");
+        
         if ((chegou(v) == caminho.size()) && (g.getWeight(caminho.get(caminho.size() - 1), caminho.get(0)) > 0)) {
 
             custo = custo + g.getWeight(caminho.get(caminho.size() - 1), caminho.get(0));
@@ -93,6 +104,10 @@ public class Server {
                         v[n] = true;
 
                         caminho.add(n);
+                        
+//                        System.out.println("\n----- Recursividade -----");
+//                        System.out.println("Caminho: "+caminho+" de "+ultimo+" para "+n+" com custo "+(custo + g.getWeight(ultimo, n)));
+                        
                         busca(g, caminho, custo + g.getWeight(ultimo, n), v);
                         caminho.remove(caminho.size() - 1);
 

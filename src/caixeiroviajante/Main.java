@@ -29,19 +29,26 @@ public class Main {
     public static ArrayList<MeuSocket> servers;
     public static boolean disponiveis[];
     private static ReentrantLock rLock;
+    public static int resultado;
 
     public static void main(String[] args) {
 
+        resultado = 0;
+
         rLock = new ReentrantLock();
 
-        System.out.println("Antes da conexão com o servidor");
+        //System.out.println("Antes da conexão com o servidor");
 
-        MeuSocket s = new MeuSocket();
-        s.startConnection("127.0.0.1", 8082);
+        MeuSocket s1 = new MeuSocket();
+        s1.startConnection("35.222.123.35", 80);
+        
+        MeuSocket s2= new MeuSocket();
+        s2.startConnection("34.67.92.213", 80);
 
         servers = new ArrayList<MeuSocket>();
 
-        servers.add(s);
+        servers.add(s1);
+        servers.add(s2);
 
         disponiveis = new boolean[servers.size()];
 
@@ -99,12 +106,19 @@ public class Main {
         caminho.add(0);
 
         visitado[0] = true;
-        System.out.println("Antes da chamada do backtracking");
+//        System.out.println("\n--Antes da chamada do backtracking--\n");
 
         busca(graph, caminho, 0, visitado);
 
-        for (MeuSocket ms : servers) {
-            ms.stopConnection();
+        while (true) {            
+            System.out.println("Esperando para fechar conexão...\n");
+            if (resultado == nVertex-1) {      
+                System.out.println("Fechando conexão....\n\n");
+                for (MeuSocket ms : servers) {
+                    ms.stopConnection();
+                }
+                break;
+            }
         }
 
         System.out.println("O melhor caminho é " + melhor + " com o custo " + menor);
@@ -112,7 +126,9 @@ public class Main {
 
     public static void busca(Graph g, ArrayList<Integer> caminho, double custo, boolean v[]) {
 
-        if (chegou(v) >= 2) {
+//        System.out.println("\nEstado: "+chegou(v)+"\n caminho parcial: "+caminho+" peso: "+custo+"\n");
+        
+        if (chegou(v) >= 1) {
 
             //encontra o ultimo vertice visitado           
             //recebe uma lista dos vértices adjacentes ao ultimo
@@ -136,7 +152,7 @@ public class Main {
                         @Override
                         public void run() {
 
-                            System.out.println("entrou na thread");
+//                            System.out.println("\n --Entrou na thread--\n");
 
                             int k = 0;
                             int aux = -1;
@@ -154,26 +170,26 @@ public class Main {
                                         disponiveis[k] = false;
 
                                         aux = k;
-                                        System.out.println("Aux: " + aux);
+//                                        System.out.println("Aux: " + aux);
                                     }
                                 }
 
                                 if (aux != -1) {
 
-                                    System.out.println("Enviando grafo: " + g);
+//                                    System.out.println("\nEnviando grafo: " + g);
                                     servers.get(aux).enviaObj(g);
 
                                     synchronized (caminho) {
-                                        System.out.println("Enviando caminho: " + caminho);
+//                                        System.out.println("\nEnviando caminho: " + caminho);
                                         servers.get(aux).enviaObj(caminho);
                                     }
 
-                                    System.out.println("Enviando custo: " + c);
+//                                    System.out.println("\nEnviando custo: " + c);
                                     servers.get(aux).enviaObj(c);
 
-                                    cam = (ArrayList<Integer>) servers.get(aux).recebeObj();                                    
+                                    cam = (ArrayList<Integer>) servers.get(aux).recebeObj();
                                     final double c = (Double) servers.get(aux).recebeObj();
-
+                                    
                                     synchronized (disponiveis) {
                                         disponiveis[k] = true;
                                     }
@@ -181,16 +197,20 @@ public class Main {
                                     try {
                                         rLock.lock();
 
+//                                        System.out.println("\n---Autualiza resultado---\n");
+                                        resultado++;
+                                        
                                         if (c < menor) {
-
+//                                            System.out.println("\n--Atualizou o melhor--\n");
                                             setMelhor(cam);
-                                            menor = c;
-                                        }
-
-                                        caminho.remove(caminho.size() - 1);
+                                            menor = c;                                            
+                                        }                                       
                                     } finally {
                                         rLock.unlock();
-                                    }
+                                    }                                    
+                                    
+                                    caminho.remove(caminho.size() - 1);
+                                    
                                     break;
                                 }
 
@@ -199,20 +219,9 @@ public class Main {
                         }
                     };
 
-                    a.start();
-
-                    try {
-                        a.join();
-                        
-                        //caminho.remove(caminho.size() - 1);
-                        
-                        //v[n] = false;
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    a.start();                    
                 }
             }
-
         } else {
             if (custo < menor) {
 
